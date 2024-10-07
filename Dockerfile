@@ -1,7 +1,7 @@
 # Dockerfile to set up the Llama API project on Ubuntu 22.04
 
 # Start from the official Ubuntu 22.04 base image
-FROM ubuntu:22.04
+FROM nvidia/cuda:12.6.1-base-ubuntu22.04
 
 # Set environment variables
 ENV DEBIAN_FRONTEND=noninteractive
@@ -27,6 +27,7 @@ COPY . /app
 
 # Install Python dependencies
 RUN pip install --upgrade pip && \
+    pip install llama-cpp-python --extra-index-url https://abetlen.github.io/llama-cpp-python/whl/cu121 && \
     pip install -r requirements.txt
 
 # Expose the port FastAPI will run on
