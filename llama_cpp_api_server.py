@@ -18,10 +18,8 @@ use_cuda = torch.cuda.is_available()
 # Initialize Llama model
 try:
     model = Llama(model_path="./llama-model/Llama-3.2-1B-Instruct-Q4_K_M.gguf",
-                  use_mlock=False,  # If you want to prevent memory swap
-                  use_mmap=True,   # Uses memory mapping for faster load
-                  device='cuda' if use_cuda else 'cpu')
-    print("Using CUDA for inference" if use_cuda else "Using CPU for inference")
+                  n_gpu_layers=-1)
+    #print("Using CUDA for inference" if use_cuda else "Using CPU for inference")
 except Exception as e:
     print("Failed to load model:", e)
     raise e
