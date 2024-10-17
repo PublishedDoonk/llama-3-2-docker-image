@@ -1,7 +1,6 @@
 # Dockerfile to set up the Llama API project on Ubuntu 22.04
-
-# Start from the official Ubuntu 22.04 base image with CUDA development tools
-FROM nvidia/cuda:12.6.1-devel-ubuntu22.04
+ARG BASE_IMAGE
+FROM $BASE_IMAGE
 
 # Set environment variables
 ENV DEBIAN_FRONTEND=noninteractive
@@ -15,10 +14,10 @@ RUN apt-get update && \
     apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Create a symbolic link for libcuda.so.1 if not already present
-RUN ln -s /usr/local/cuda/lib64/stubs/libcuda.so /usr/lib/x86_64-linux-gnu/libcuda.so.1
+#RUN ln -s /usr/local/cuda/lib64/stubs/libcuda.so /usr/lib/x86_64-linux-gnu/libcuda.so.1
 
 # Run ldconfig to update linker paths
-RUN echo "/usr/local/cuda/lib64" > /etc/ld.so.conf.d/cuda.conf && ldconfig
+#RUN echo "/usr/local/cuda/lib64" > /etc/ld.so.conf.d/cuda.conf && ldconfig
 
 # Set Python3 as default
 RUN update-alternatives --install /usr/bin/python python /usr/bin/python3 1
@@ -31,10 +30,6 @@ ENV PATH=$PATH:/home/appuser/.local/bin
 
 # Set working directory and change ownership to the non-root user
 WORKDIR /app
-#RUN chown -R appuser /app
-
-# Switch to the non-root user
-#USER appuser
 
 # Download the Llama model from huggingface
 RUN mkdir /app/llama-model && \
@@ -43,18 +38,25 @@ RUN mkdir /app/llama-model && \
 # Copy the FastAPI application files into the container
 COPY --chown=appuser . /app
 
+ARG SETUP_SCRIPT
+RUN ls -l scripts && \
+    echo "Running setup script: $SETUP_SCRIPT" && \
+    #chmod +x scripts/$SETUP_SCRIPT && \
+    scripts/$SETUP_SCRIPT
+#RUN ./scripts/%SETUP_SCRIPT%
+
 # Install Python dependencies and build with CUDA support
-RUN pip install --upgrade pip && \
-    CMAKE_ARGS="-DGGML_CUDA=on -DCMAKE_CUDA_COMPILER=/usr/local/cuda/bin/nvcc -DCUDA_TOOLKIT_ROOT_DIR=/usr/local/cuda -DCUDA_LIB_DIR=/usr/lib/x86_64-linux-gnu" pip install llama-cpp-python && \
-    #pip install llama-cpp-python --extra-index-url https://abetlen.github.io/llama-cpp-python/whl/cu121 && \
-    pip install -r requirements.txt
+#RUN pip install --upgrade pip && \
+#    CMAKE_ARGS="-DGGML_CUDA=on -DCMAKE_CUDA_COMPILER=/usr/local/cuda/bin/nvcc -DCUDA_TOOLKIT_ROOT_DIR=/usr/local/cuda -DCUDA_LIB_DIR=/usr/lib/x86_64-linux-gnu" pip install llama-cpp-python && \
+#    #pip install llama-cpp-python --extra-index-url https://abetlen.github.io/llama-cpp-python/whl/cu121 && \
+#    pip install -r requirements.txt
 
 # Remove the symlink to prevent runtime conflicts with NVIDIA runtime
-USER root
-RUN rm /usr/lib/x86_64-linux-gnu/libcuda.so.1
+#USER root
+#RUN rm /usr/lib/x86_64-linux-gnu/libcuda.so.1
 
 # Switch back to non-root user
-USER appuser
+#USER appuser
 
 # Expose the port FastAPI will run on
 EXPOSE 8000
